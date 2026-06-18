@@ -2,7 +2,7 @@
 # Map HA options (/data/options.json) -> s6 container environment so the
 # `with-contenv` service run scripts inherit them.
 # Parsed with `node` (present in the image); apt-get is unusable here because
-# upstream force-purged the dependency graph to slim the image.
+# the fork image removed the apt lists to slim itself.
 set -e
 
 ENVDIR=/run/s6/container_environment

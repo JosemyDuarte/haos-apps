@@ -1,6 +1,7 @@
 #!/bin/sh
-# Relocate upstream's persistent paths into the single HA /data volume.
-# Runs BEFORE upstream's 01-postgres-init / 02-app-init (lexical order: 00 < 01 < 02).
+# Relocate the fork image's persistent paths into the single HA /data volume.
+# Runs BEFORE the image's own 01-postgres-init / 02-app-init (lexical order:
+# 00 < 01 < 02), so the symlinks are already in place when those run.
 set -e
 
 mkdir -p /data/db /data/uploads
@@ -19,6 +20,15 @@ if [ ! -L /app/uploads ]; then
   rm -rf /app/uploads
   ln -s /data/uploads /app/uploads
 fi
-chown inker:inker /data/uploads
+# Pre-create the upload subdirs on the REAL target and chown them recursively.
+# The image's 02-app-init does `mkdir -p /app/uploads/...` (as root) and the
+# backend service does `chown -R inker:inker /app/uploads`, but that chown is
+# given the /app/uploads *symlink* and `chown -R` (default -P) does NOT traverse
+# a symlink argument — so without this the subdirs stay root-owned and the
+# non-root `inker` backend cannot write screens/captures. mkdir -p here is
+# idempotent, so 02-app-init's later mkdir is a no-op and ownership sticks.
+mkdir -p /data/uploads/screens /data/uploads/firmware /data/uploads/widgets \
+         /data/uploads/captures /data/uploads/drawings
+chown -R inker:inker /data/uploads
 
 echo "[ha] Relocated Postgres data -> /data/db, uploads -> /data/uploads"

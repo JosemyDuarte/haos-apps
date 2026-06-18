@@ -9,7 +9,7 @@ directly from the add-on store.
 
 | Add-on | Description |
 |--------|-------------|
-| [**Inker**](./inker) | Self-hosted e-ink device management server for [TRMNL](https://usetrmnl.com/) and BYOD displays. Wraps the upstream [`usetrmnl/inker`](https://github.com/usetrmnl/inker) image. |
+| [**Inker**](./inker) | Self-hosted e-ink device management server for [TRMNL](https://usetrmnl.com/) and BYOD displays. Wraps the [`JosemyDuarte/inker`](https://github.com/JosemyDuarte/inker) fork image (`ghcr.io/josemyduarte/inker`, **aarch64 / Raspberry Pi**). |
 
 ---
 
@@ -32,19 +32,20 @@ directly from the add-on store.
    (you may need to refresh / **Check for updates**).
 
 > **Requirement:** Home Assistant OS or Supervised (the add-on store is provided
-> by the Supervisor). Add-ons are **not** available on Home Assistant Container
-> or Core installs.
+> by the Supervisor) on **`aarch64` hardware** (e.g. a Raspberry Pi 4/5). Add-ons
+> are **not** available on Home Assistant Container or Core installs.
 
 ---
 
 ## Installing the Inker add-on
 
 1. After adding the repository, open the **Inker** add-on from the store and
-   click **Install** (the Supervisor builds a thin image on top of the upstream
-   `wojooo/inker` image — this is quick).
+   click **Install** (the Supervisor builds a thin image on top of the
+   `ghcr.io/josemyduarte/inker` fork image — this is quick).
 2. Open the **Configuration** tab and set your options (see below), then **Save**.
 3. Click **Start**.
-4. Open the web UI from the sidebar (**Open Web UI** / the Inker panel).
+4. Open the web UI from the add-on's **OPEN WEB UI** button (it opens the direct
+   port — see below).
 
 ### Configuration
 
@@ -54,41 +55,52 @@ directly from the add-on store.
 | `timezone` | `UTC` | Timezone for clock/date widgets (e.g. `Europe/Madrid`). |
 | `log_level` | `info` | `trace` / `debug` / `info` / `warning` / `error`. |
 
-### Two ways the app is reached
+### How the app is reached
 
-- **Browser → Ingress.** The dashboard is served through the Home Assistant
-  sidebar, protected by your Home Assistant login. No extra port needed.
-- **E-ink devices → direct port.** TRMNL / BYOD devices cannot use Ingress (they
-  have no Home Assistant session), so they connect to a directly-exposed port.
-  Set/observe it in the add-on's **Network** tab (default host port **8080**);
-  devices then talk to `http://<your-HA-IP>:8080`.
+Both the browser dashboard and e-ink devices use the **same directly-exposed
+port** (default host port **8080**, set/observe it in the add-on's **Network**
+tab):
+
+```
+http://<your-HA-IP>:8080
+```
+
+> **Ingress is disabled on purpose.** Inker's web UI is built to be served from
+> the origin root (absolute `/assets/…` paths, absolute `/api` base, client-side
+> routing with no base path), so it does not render under Home Assistant's
+> Ingress subpath (`/api/hassio_ingress/<token>/`). The direct port is the
+> supported way in — and TRMNL/BYOD devices need it anyway (they cannot
+> authenticate through Ingress).
 
 ### Data & backups
 
-All state (PostgreSQL database, Redis, uploads) is stored under the add-on's
-persistent `/data` volume and is included in Home Assistant backups.
+All state (PostgreSQL database under `db/`, uploads under `uploads/`) is stored
+in the add-on's persistent `/data` volume and is included in Home Assistant
+backups. The Redis dependency from upstream is **not** used by this fork. `db/`
+is excluded from backups by default — see [`inker/DOCS.md`](./inker/DOCS.md).
 
 ### Known limitations
 
-- **`amd64` only.** The upstream image bundles x86-only components (headless
-  Chrome, an x86 s6-overlay build), so this add-on does **not** run on
-  `aarch64` / Raspberry Pi.
+- **`aarch64` only.** The published image (`ghcr.io/josemyduarte/inker`) is built
+  for `arm64` only, so this add-on runs on a Raspberry Pi 4/5 but **not** on
+  `amd64`/x86 hardware. Supporting both would need a multi-arch image.
+- **No Ingress** — the dashboard is reached via the direct port (above).
 
 ---
 
-## Updating to a new upstream version
+## Updating to a new fork version
 
-This add-on is a thin wrapper around the upstream image, so tracking a new
-upstream release is a **two-line change**.
+This add-on is a thin wrapper around the fork image, so tracking a new release is
+a **two-line change**.
 
-When [`usetrmnl/inker`](https://github.com/usetrmnl/inker) publishes a new tag
-(`X.Y.Z`, mirrored to Docker Hub as [`wojooo/inker`](https://hub.docker.com/r/wojooo/inker)):
+When [`JosemyDuarte/inker`](https://github.com/JosemyDuarte/inker) publishes a new
+tag (`X.Y.Z`, pushed to [`ghcr.io/josemyduarte/inker`](https://github.com/JosemyDuarte/inker/pkgs/container/inker)):
 
 1. Edit [`inker/build.yaml`](./inker/build.yaml) — bump the image tag:
 
    ```yaml
    build_from:
-     amd64: docker.io/wojooo/inker:X.Y.Z
+     aarch64: ghcr.io/josemyduarte/inker:X.Y.Z
    ```
 2. Edit [`inker/config.yaml`](./inker/config.yaml) — match the version:
 
@@ -98,23 +110,23 @@ When [`usetrmnl/inker`](https://github.com/usetrmnl/inker) publishes a new tag
 3. Commit and push. In Home Assistant, **Check for updates** in the add-on store;
    the Inker add-on will show an update. Click **Update**.
 
-> Reconcile the glue in `inker/rootfs/etc/cont-init.d/` **only if** an upstream
+> Reconcile the glue in `inker/rootfs/etc/cont-init.d/` **only if** a new fork
 > release changes one of the things it depends on:
-> data paths (`/var/lib/postgresql/17/main`, `/app/uploads`, redis `--dir /data`),
-> internal ports (nginx `80`, backend `3002`), env var names
-> (`ADMIN_PIN`, `TZ`, `LOG_LEVEL`), or the s6 container-environment path
+> data paths (`/var/lib/postgresql/17/main`, `/app/uploads`), internal ports
+> (nginx `80`, backend `3002`), env var names (`ADMIN_PIN`, `TZ`, `LOG_LEVEL`),
+> the non-root user (`inker`), or the s6 container-environment path
 > (`/run/s6/container_environment`). If none moved, the version bump is the whole
 > update.
 
 ### Automating the bump
 
-This repository already ships a [Renovate](https://docs.renovatebot.com/) config
-at [`.github/renovate.json`](./.github/renovate.json). It watches the
-[`wojooo/inker`](https://hub.docker.com/r/wojooo/inker) Docker tag and bumps both
-`inker/build.yaml` and `inker/config.yaml` automatically.
+This repository ships a [Renovate](https://docs.renovatebot.com/) config at
+[`.github/renovate.json`](./.github/renovate.json). It watches the
+`ghcr.io/josemyduarte/inker` Docker tag and bumps both `inker/build.yaml` and
+`inker/config.yaml` automatically.
 
 To activate it, enable the [Renovate GitHub App](https://github.com/apps/renovate)
-on this repository. After that, each upstream release becomes an auto-opened pull
+on this repository. After that, each fork release becomes an auto-opened pull
 request — review, merge, then **Update** in Home Assistant.
 
 ---
@@ -125,9 +137,9 @@ request — review, merge, then **Update** in Home Assistant.
 
 ```
 inker/
-├── config.yaml        # add-on manifest: ingress, ports, options + schema
-├── build.yaml         # base image = the pinned upstream wojooo/inker tag
-├── Dockerfile         # FROM upstream image + COPY rootfs (no apt — see note)
+├── config.yaml        # add-on manifest: ports, options + schema (ingress off)
+├── build.yaml         # base image = the pinned ghcr.io/josemyduarte/inker tag
+├── Dockerfile         # FROM fork image + COPY rootfs (no apt — see note)
 ├── DOCS.md            # the in-Home-Assistant Documentation tab
 ├── icon.png           # store/sidebar icon
 ├── logo.png           # store logo
@@ -137,10 +149,14 @@ inker/
     └── 01-ha-options  # map HA options (/data/options.json) → container env (via node)
 ```
 
-The wrapper deliberately avoids `apt-get` (the upstream image's package
-dependency graph is pruned and cannot resolve installs) and parses options with
-the `node` runtime already present in the image.
+The fork image is s6-overlay based (`ENTRYPOINT ["/init"]`), so the wrapper sets
+`init: false` and adds two `cont-init.d` scripts that run **before** the image's
+own `01-postgres-init` / `02-app-init`. The wrapper deliberately avoids
+`apt-get` (the image removed its apt lists) and parses options with the `node`
+runtime already present in the image.
 
-The boot path, the single-`/data` relocation, the options→env mapping, and the
-healthy startup were verified by running the wrapper standalone under Docker
-before publishing.
+The boot path, the single-`/data` relocation (Postgres cluster + uploads),
+upload-dir writability by the non-root `inker` user, the options→env mapping, a
+live backend response, and restart persistence were all verified by running the
+wrapper standalone under Docker on native `arm64` before publishing.
+</content>

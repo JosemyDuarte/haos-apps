@@ -3,18 +3,22 @@ name: Inker
 version: "0.4.0"
 slug: inker
 description: Self-hosted e-ink device management server (TRMNL / BYOD)
-url: https://github.com/usetrmnl/inker
+url: https://github.com/JosemyDuarte/inker
 arch:
-  - amd64
+  - aarch64
 init: false
 startup: application
-panel_icon: mdi:image-frame
-ingress: true
-ingress_port: 80
+# Ingress is intentionally disabled: the bundled web UI is built to be served at
+# the origin root (absolute asset paths, axios baseURL "/api", BrowserRouter with
+# no basename) and does not render under HA's ingress subpath. The dashboard is
+# reached through the direct port instead (see webui / ports below and DOCS.md).
+ingress: false
+webui: "http://[HOST]:[PORT:80]/"
 ports:
   "80/tcp": 8080
 ports_description:
-  "80/tcp": Port for TRMNL/BYOD devices that connect directly (not via Ingress)
+  "80/tcp": >-
+    Web UI and the API for TRMNL / BYOD devices that connect directly
 options:
   admin_pin: "1111"
   timezone: UTC
