@@ -15,4 +15,5 @@ configuration:
 network:
   "80/tcp":
     description: >-
-      Port for TRMNL / BYOD e-ink devices that connect directly (not via Ingress).
+      Web UI and the API for TRMNL / BYOD e-ink devices. Ingress is disabled, so
+      both the dashboard and devices use this port.

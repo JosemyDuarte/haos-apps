@@ -1,3 +1,5 @@
 ---
+# The fork publishes a single-arch (arm64 / aarch64) image to GHCR — there is
+# no amd64 manifest, so this add-on is aarch64-only (Raspberry Pi 4/5, etc.).
 build_from:
-  amd64: docker.io/wojooo/inker:0.4.0
+  aarch64: ghcr.io/josemyduarte/inker:0.4.0

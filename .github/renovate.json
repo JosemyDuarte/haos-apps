@@ -6,17 +6,17 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Bump the upstream image tag in each add-on's build.yaml",
+      "description": "Bump the fork image tag in each add-on's build.yaml",
       "fileMatch": ["(^|/)build\\.yaml$"],
-      "matchStrings": ["docker\\.io/(?<depName>[^:\\s]+):(?<currentValue>\\S+)"],
+      "matchStrings": ["(?<depName>ghcr\\.io/[^:\\s]+):(?<currentValue>\\S+)"],
       "datasourceTemplate": "docker"
     },
     {
       "customType": "regex",
-      "description": "Keep Inker's config.yaml version in sync with the wojooo/inker image tag",
+      "description": "Keep Inker's config.yaml version in sync with the ghcr.io/josemyduarte/inker image tag",
       "fileMatch": ["(^|/)inker/config\\.yaml$"],
       "matchStrings": ["version:\\s*\"?(?<currentValue>[0-9][^\"\\s]*)\"?"],
-      "depNameTemplate": "wojooo/inker",
+      "depNameTemplate": "ghcr.io/josemyduarte/inker",
       "datasourceTemplate": "docker"
     }
   ]
