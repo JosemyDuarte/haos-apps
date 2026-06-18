@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Bump the upstream image tag in each add-on's build.yaml",
+      "fileMatch": ["(^|/)build\\.yaml$"],
+      "matchStrings": ["docker\\.io/(?<depName>[^:\\s]+):(?<currentValue>\\S+)"],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Keep Inker's config.yaml version in sync with the wojooo/inker image tag",
+      "fileMatch": ["(^|/)inker/config\\.yaml$"],
+      "matchStrings": ["version:\\s*\"?(?<currentValue>[0-9][^\"\\s]*)\"?"],
+      "depNameTemplate": "wojooo/inker",
+      "datasourceTemplate": "docker"
+    }
+  ]
+}

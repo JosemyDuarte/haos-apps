@@ -106,24 +106,16 @@ When [`usetrmnl/inker`](https://github.com/usetrmnl/inker) publishes a new tag
 > (`/run/s6/container_environment`). If none moved, the version bump is the whole
 > update.
 
-### Automating the bump (optional)
+### Automating the bump
 
-Add a [Renovate](https://docs.renovatebot.com/) config so a bot opens a PR on
-every upstream release. Create `.github/renovate.json`:
+This repository already ships a [Renovate](https://docs.renovatebot.com/) config
+at [`.github/renovate.json`](./.github/renovate.json). It watches the
+[`wojooo/inker`](https://hub.docker.com/r/wojooo/inker) Docker tag and bumps both
+`inker/build.yaml` and `inker/config.yaml` automatically.
 
-```json
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "customManagers": [
-    {
-      "customType": "regex",
-      "fileMatch": ["(^|/)build\\.yaml$"],
-      "matchStrings": ["docker\\.io/(?<depName>[^:]+):(?<currentValue>\\S+)"],
-      "datasourceTemplate": "docker"
-    }
-  ]
-}
-```
+To activate it, enable the [Renovate GitHub App](https://github.com/apps/renovate)
+on this repository. After that, each upstream release becomes an auto-opened pull
+request — review, merge, then **Update** in Home Assistant.
 
 ---
 
@@ -136,6 +128,9 @@ inker/
 ├── config.yaml        # add-on manifest: ingress, ports, options + schema
 ├── build.yaml         # base image = the pinned upstream wojooo/inker tag
 ├── Dockerfile         # FROM upstream image + COPY rootfs (no apt — see note)
+├── DOCS.md            # the in-Home-Assistant Documentation tab
+├── icon.png           # store/sidebar icon
+├── logo.png           # store logo
 ├── translations/      # UI labels for the Configuration form
 └── rootfs/etc/cont-init.d/
     ├── 00-ha-relocate # relocate Postgres + uploads into the single /data volume
