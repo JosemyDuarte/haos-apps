@@ -1,4 +1,5 @@
 ARG BUILD_FROM=docker.io/wojooo/inker:0.4.0
+# hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 # NOTE: upstream slimmed this image with `dpkg --purge --force-depends` and
 # removed apt lists, so `apt-get install` cannot resolve deps. We parse
