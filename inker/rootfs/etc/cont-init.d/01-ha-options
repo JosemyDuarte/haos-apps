@@ -1,0 +1,24 @@
+#!/bin/sh
+# Map HA options (/data/options.json) -> s6 container environment so the
+# `with-contenv` service run scripts inherit them.
+# Parsed with `node` (present in the image); apt-get is unusable here because
+# upstream force-purged the dependency graph to slim the image.
+set -e
+
+ENVDIR=/run/s6/container_environment
+OPTS=/data/options.json
+mkdir -p "$ENVDIR"
+
+[ -f "$OPTS" ] || { echo "[ha] no options.json, using image defaults"; exit 0; }
+
+node -e '
+const fs = require("fs");
+const o = JSON.parse(fs.readFileSync("/data/options.json", "utf8"));
+const d = "/run/s6/container_environment";
+const put = (k, v) => fs.writeFileSync(d + "/" + k, String(v));
+put("ADMIN_PIN", o.admin_pin ?? "1111");
+put("TZ",        o.timezone  ?? "UTC");
+put("LOG_LEVEL", o.log_level ?? "info");
+'
+
+echo "[ha] Mapped options.json -> container environment"

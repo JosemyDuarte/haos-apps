@@ -1,0 +1,18 @@
+---
+configuration:
+  admin_pin:
+    name: Admin PIN
+    description: >-
+      PIN used to log in to the Inker web interface. Change it from the default!
+  timezone:
+    name: Timezone
+    description: >-
+      Timezone for clock/date widgets, e.g. `Europe/Madrid`.
+  log_level:
+    name: Log level
+    description: >-
+      Verbosity of Inker's logs. Increase it (e.g. `debug`) when troubleshooting.
+network:
+  "80/tcp":
+    description: >-
+      Port for TRMNL / BYOD e-ink devices that connect directly (not via Ingress).

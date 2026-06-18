@@ -1,0 +1,27 @@
+---
+name: Inker
+version: "0.4.0"
+slug: inker
+description: Self-hosted e-ink device management server (TRMNL / BYOD)
+url: https://github.com/usetrmnl/inker
+arch:
+  - amd64
+init: false
+startup: application
+panel_icon: mdi:image-frame
+ingress: true
+ingress_port: 80
+ports:
+  "80/tcp": 8080
+ports_description:
+  "80/tcp": Port for TRMNL/BYOD devices that connect directly (not via Ingress)
+options:
+  admin_pin: "1111"
+  timezone: UTC
+  log_level: info
+schema:
+  admin_pin: password
+  timezone: str
+  log_level: list(trace|debug|info|warning|error)?
+backup_exclude:
+  - "db/**"

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Relocate upstream's persistent paths into the single HA /data volume.
+# Runs BEFORE upstream's 01-postgres-init / 02-app-init (lexical order: 00 < 01 < 02).
+set -e
+
+mkdir -p /data/db /data/uploads
+
+# Postgres: initdb (run as `postgres`) requires the data dir to be owned by
+# postgres and mode 700. Chown the symlink TARGET, not just the link.
+if [ ! -L /var/lib/postgresql/17/main ]; then
+  rm -rf /var/lib/postgresql/17/main
+  ln -s /data/db /var/lib/postgresql/17/main
+fi
+chown postgres:postgres /data/db
+chmod 700 /data/db
+
+# Uploads: backend writes here as user `inker`.
+if [ ! -L /app/uploads ]; then
+  rm -rf /app/uploads
+  ln -s /data/uploads /app/uploads
+fi
+chown inker:inker /data/uploads
+
+echo "[ha] Relocated Postgres data -> /data/db, uploads -> /data/uploads"
